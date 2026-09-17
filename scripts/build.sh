@@ -53,6 +53,16 @@ clone_sha "$COMMON_REPO" "$COMMON_SHA" "$SRC/common"
 clone_sha "$MODS_REPO" "$MODS_SHA" "$SRC/mods"
 clone_sha "$AK3_REPO" "$AK3_SHA" "$SRC/AnyKernel3"
 
+# --- vendor overlay (proven local layout): $ROOT/vendor + oplus links ---
+# common Kconfig references kernel/oplus_cpu + drivers/soc/oplus/storage,
+# which live in mods/vendor/oplus.
+ln -sfn "$SRC/mods/vendor" "$ROOT/vendor"
+mkdir -p "$KDIR/kernel" "$KDIR/drivers/soc/oplus"
+ln -sfn ../../../vendor/oplus/kernel/cpu "$KDIR/kernel/oplus_cpu"
+ln -sfn ../../../../../vendor/oplus/kernel/storage "$KDIR/drivers/soc/oplus/storage"
+test -e "$KDIR/kernel/oplus_cpu/sched/Kconfig" || { echo "[!] overlay broken"; exit 1; }
+echo "[+] overlay links OK"
+
 # --- KernelSU (official tiann, pinned ref) ---
 echo "[*] Adding KernelSU @ ${KSU_REF:0:8}..."
 cd "$SRC"
