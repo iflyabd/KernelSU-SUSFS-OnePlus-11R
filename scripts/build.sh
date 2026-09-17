@@ -53,12 +53,12 @@ clone_sha "$COMMON_REPO" "$COMMON_SHA" "$SRC/common"
 clone_sha "$MODS_REPO" "$MODS_SHA" "$SRC/mods"
 clone_sha "$AK3_REPO" "$AK3_SHA" "$SRC/AnyKernel3"
 
-# --- KernelSU-Next (pinned ref, WildKernels convention) ---
-echo "[*] Adding KernelSU-Next @ ${KSU_REF:0:8}..."
+# --- KernelSU (official tiann, pinned ref) ---
+echo "[*] Adding KernelSU @ ${KSU_REF:0:8}..."
 cd "$SRC"
-curl --fail --location --proto '=https' -LSs "$KSU_NEXT_SETUP" | bash -s "$KSU_REF"
-test -d "$SRC/KernelSU-Next/kernel" || { echo "[!] KernelSU-Next setup failed"; exit 1; }
-echo "[+] KernelSU-Next present"
+curl --fail --location --proto '=https' -LSs "$KSU_SETUP" | bash -s "$KSU_REF"
+test -d "$SRC/KernelSU/kernel" || { echo "[!] KernelSU setup failed"; exit 1; }
+echo "[+] KernelSU present"
 
 # --- SUSFS (pinned SHA, gki-android12-5.10) ---
 echo "[*] Fetching SUSFS @ ${SUSFS_REF:0:8}..."
@@ -69,32 +69,16 @@ git -C "$SRC/susfs4ksu" fetch -q --depth 1 origin "$SUSFS_REF"
 git -C "$SRC/susfs4ksu" checkout -q FETCH_HEAD
 SUSFS_VERSION=$(grep -m1 '#define SUSFS_VERSION' "$SRC/susfs4ksu/kernel_patches/include/linux/susfs.h" | awk -F'"' '{print $2}')
 echo "[*] SUSFS version: $SUSFS_VERSION"
-test "$SUSFS_VERSION" = "v2.2.0" || { echo "[!] unexpected SUSFS version (fix set is v2.2.0)"; exit 1; }
-echo "[*] Cloning WildKernels kernel_patches (susfs fix sets)..."
-if [ ! -d "$SRC/kernel_patches/.git" ]; then
-  git clone -q --depth 1 --branch "$KPATCH_REF" "$KPATCH_REPO" "$SRC/kernel_patches"
-fi
-FIXDIR="$SRC/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
-test -d "$FIXDIR" || { echo "[!] fix dir missing: $FIXDIR"; exit 1; }
 echo "[*] Applying SUSFS GKI patch..."
 cd "$KDIR"
 patch -p1 --forward < "$SRC/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android12-5.10.patch" \
   || { echo "[!] susfs 50_add failed"; exit 1; }
 cp "$SRC/susfs4ksu/kernel_patches/fs/"* "$KDIR/fs/"
 cp "$SRC/susfs4ksu/kernel_patches/include/linux/"* "$KDIR/include/linux/"
-echo "[*] Enabling SUSFS for KernelSU-Next (WildKernels v2.2.0 flow)..."
-cd "$SRC/KernelSU-Next"
-patch -p1 --forward < "$SRC/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true
-for file in $(find ./kernel -maxdepth 2 -name "*.rej" -exec basename {} .rej \;); do
-  echo "  [fix] $file <- fix_$file.patch"
-  patch -p1 --forward < "$FIXDIR/fix_$file.patch" \
-    || { echo "[!] susfs fix failed: $file"; exit 1; }
-done
-echo "[*] Hook mode + KSU toolkit..."
-patch -p1 --forward < "$FIXDIR/overwrite_hook_mode.patch" \
-  || { echo "[!] overwrite_hook_mode failed"; exit 1; }
-patch -p1 --forward < "$FIXDIR/ksu_toolkit.patch" \
-  || { echo "[!] ksu_toolkit failed"; exit 1; }
+echo "[*] Enabling SUSFS for KernelSU (clean-apply verified)..."
+cd "$SRC/KernelSU"
+patch -p1 --forward < "$SRC/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" \
+  || { echo "[!] susfs ksu glue failed"; exit 1; }
 cd "$KDIR"
 
 # --- OPLUS kernel-code fixes (apply only where the tree needs them) ---
@@ -110,7 +94,7 @@ echo "[*] Configuring..."
 mkdir -p "$OUT"
 make O="$OUT" gki_defconfig 2>&1 | tail -n 2
 cat "$ROOT/configs/monitor-wifi-bt.fragment" >> "$OUT/.config"
-grep -q "config KSU$" "$KDIR/drivers/kernelsu/Kconfig" 2>/dev/null && echo "CONFIG_KSU=y" >> "$OUT/.config" || echo "CONFIG_KSU=y" >> "$OUT/.config"
+echo "CONFIG_KSU=y" >> "$OUT/.config"
 if grep -rq "config KSU_SUSFS$" "$KDIR/fs/" 2>/dev/null; then echo "CONFIG_KSU_SUSFS=y" >> "$OUT/.config"; fi
 make O="$OUT" olddefconfig 2>&1 | tee -a "$LOG" | tail -n 5
 test "${PIPESTATUS[0]}" -eq 0 || { echo "[!] olddefconfig failed"; exit 1; }

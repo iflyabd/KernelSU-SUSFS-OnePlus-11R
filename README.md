@@ -3,7 +3,8 @@
 OnePlus 11R (CPH2487, SM8475 waipio) custom 5.10 GKI kernel:
 
 - **Base:** WildKernels `oneplus_11r_w.xml` sources @ pinned SHAs (`base-pin.env`)
-- **Root:** KernelSU-Next (pinned) + SUSFS `gki-android12-5.10` (pinned)
+- **Root:** official tiann KernelSU (pinned) + SUSFS `gki-android12-5.10`
+  (pinned) — glue patch dry-run verified zero-reject
 - **WiFi:** in-tree **MT7601U** (`148f:7601`) + out-of-tree **RTL8822BU**
   (DWA-185 `0bda:b812`, proven tree, `CONFIG_WIFI_MONITOR=y`)
 - **BT:** in-tree `btusb` + `hci_uart_rtl` for RTL8761BU + firmware
@@ -27,6 +28,6 @@ overridable, defaults pinned). Artifacts (30d): `ksu11r-ak3-image`,
 ## Notes
 - Sources are never vendored (clean history, one commit): CI clones pins.
 - `drivers/rtl8812au` (unused 103M variant) intentionally omitted.
-- Pinned: KSU-Next `234f6e04` + SUSFS `ccb19186` (**v2.2.0**, proven combo
-  per WildKernels fix-set history), AK3 `0b46673`,
+- Pinned: tiann KSU `26a09914` + SUSFS `f3b5aecf` (**v2.3.0**; glue
+  dry-run verified zero-reject), AK3 `0b46673`,
   common `5b5ead1`, mods `46ba2a7`.

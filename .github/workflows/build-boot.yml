@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       ksu_ref:
-        description: 'KernelSU-Next ref (default pinned v33239-era)'
+        description: 'tiann KernelSU ref (default pinned)'
         required: false
-        default: '234f6e040fcbca18b16d2398e1aa225712ec99ad'
+        default: '26a0991486fc686d7b952829820f1e1f3082ae99'
       susfs_ref:
-        description: 'SUSFS gki-android12-5.10 SHA (default pinned v2.2.0)'
+        description: 'SUSFS gki-android12-5.10 SHA (default pinned v2.3.0)'
         required: false
-        default: 'ccb1918684b27644d17a6c842f57b60ae5966025'
+        default: 'f3b5aecf53ff8b3296603071b91383f6be6c7cbb'
 
 env:
   JOBS: 4
