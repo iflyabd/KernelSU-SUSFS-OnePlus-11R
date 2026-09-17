@@ -27,6 +27,6 @@ overridable, defaults pinned). Artifacts (30d): `ksu11r-ak3-image`,
 ## Notes
 - Sources are never vendored (clean history, one commit): CI clones pins.
 - `drivers/rtl8812au` (unused 103M variant) intentionally omitted.
-- Pinned: KSU-Next `f9a69951`, SUSFS `46e4c5a1` (**v2.2.0**, has Wild fix
-  patches; v2.3.0 has none yet), AK3 `0b46673`,
+- Pinned: KSU-Next `234f6e04` + SUSFS `ccb19186` (**v2.2.0**, proven combo
+  per WildKernels fix-set history), AK3 `0b46673`,
   common `5b5ead1`, mods `46ba2a7`.
