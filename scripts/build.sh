@@ -106,6 +106,10 @@ make O="$OUT" gki_defconfig 2>&1 | tee -a "$LOG" | tail -n 5
 test "${PIPESTATUS[0]}" -eq 0 || { echo "[!] gki_defconfig failed (see $LOG)"; exit 1; }
 cat "$ROOT/configs/monitor-wifi-bt.fragment" >> "$OUT/.config"
 echo "CONFIG_KSU=y" >> "$OUT/.config"
+# Stock-exact UTS/vermagic so stock vendor_dlkm keeps loading (proven MSM flow):
+# UTS becomes 5.10.236-android12-9-o-g74d132f4467a (no -dirty marker).
+./scripts/config --file "$OUT/.config" --set-str CONFIG_LOCALVERSION "-android12-9-o-g74d132f4467a"
+./scripts/config --file "$OUT/.config" --disable CONFIG_LOCALVERSION_AUTO
 if grep -rq "config KSU_SUSFS$" "$KDIR/fs/" 2>/dev/null; then echo "CONFIG_KSU_SUSFS=y" >> "$OUT/.config"; fi
 make O="$OUT" olddefconfig 2>&1 | tee -a "$LOG" | tail -n 5
 test "${PIPESTATUS[0]}" -eq 0 || { echo "[!] olddefconfig failed"; exit 1; }
@@ -170,9 +174,10 @@ EOF
 ( cd "$AK3" && zip -r -X "$ART/ksu-11r-ak3.zip" . -x ".*" > /dev/null )
 ls -lh "$ART/ksu-11r-ak3.zip"
 
-MOD="$ART/magisk"; rm -rf "$MOD"; mkdir -p "$MOD/vendor/lib/modules" "$MOD/lib/firmware"
-cp -r "$ROOT/magisk-module/META-INF" "$ROOT/magisk-module/etc" \
+MOD="$ART/magisk"; rm -rf "$MOD"; mkdir -p "$MOD/vendor/lib/modules" "$MOD/lib/firmware" "$MOD/etc"
+cp -r "$ROOT/magisk-module/META-INF" \
     "$ROOT/magisk-module/module.prop" "$ROOT/magisk-module/post-finit.sh" "$MOD/"
+[ -d "$ROOT/magisk-module/etc" ] && cp -r "$ROOT/magisk-module/etc/." "$MOD/etc/" || true
 cp "$ART/modules/"*.ko "$MOD/vendor/lib/modules/"
 cp -r "$ART/firmware/"* "$MOD/lib/firmware/"
 ( cd "$MOD" && zip -r -X "$ART/magisk-ksu-11r-wifi-bt.zip" . -x ".*" > /dev/null )
