@@ -8,9 +8,9 @@ on:
         required: false
         default: 'f9a69951d3b6db7f0904688da08658da646b2368'
       susfs_ref:
-        description: 'SUSFS gki-android12-5.10 SHA (default pinned)'
+        description: 'SUSFS gki-android12-5.10 SHA (default pinned v2.2.0)'
         required: false
-        default: 'f3b5aecf53ff8b3296603071b91383f6be6c7cbb'
+        default: '46e4c5a1a28ad97e0537496b5585bf7a5f2355e4'
 
 env:
   JOBS: 4
