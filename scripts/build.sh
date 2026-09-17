@@ -92,7 +92,8 @@ fi
 # --- defconfig: stock GKI + KSU/SUSFS + monitor fragment ---
 echo "[*] Configuring..."
 mkdir -p "$OUT"
-make O="$OUT" gki_defconfig 2>&1 | tail -n 2
+make O="$OUT" gki_defconfig 2>&1 | tee -a "$LOG" | tail -n 5
+test "${PIPESTATUS[0]}" -eq 0 || { echo "[!] gki_defconfig failed (see $LOG)"; exit 1; }
 cat "$ROOT/configs/monitor-wifi-bt.fragment" >> "$OUT/.config"
 echo "CONFIG_KSU=y" >> "$OUT/.config"
 if grep -rq "config KSU_SUSFS$" "$KDIR/fs/" 2>/dev/null; then echo "CONFIG_KSU_SUSFS=y" >> "$OUT/.config"; fi
