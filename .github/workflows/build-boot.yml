@@ -1,0 +1,91 @@
+name: KSU-SUSFS OP11R boot build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ksu_ref:
+        description: 'KernelSU-Next ref (default pinned)'
+        required: false
+        default: 'f9a69951d3b6db7f0904688da08658da646b2368'
+      susfs_ref:
+        description: 'SUSFS gki-android12-5.10 SHA (default pinned)'
+        required: false
+        default: 'f3b5aecf53ff8b3296603071b91383f6be6c7cbb'
+
+env:
+  JOBS: 4
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Install toolchain + deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential gcc-aarch64-linux-gnu \
+            clang lld llvm make bc bison flex \
+            libssl-dev libelf-dev cpio dwarves \
+            python3 git ccache zip unzip curl lz4 patch
+          sudo ln -sf /usr/bin/python3 /usr/bin/python
+
+      - name: Swap for LTO link
+        run: |
+          swapon --show; free -h
+          sudo swapoff -a 2>/dev/null || true
+          sudo rm -f /swapfile
+          sudo fallocate -l 16G /swapfile
+          sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+          free -h
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ksu11r-ccache-${{ hashFiles('configs/monitor-wifi-bt.fragment', 'patches/msm-kernel-fixes.patch') }}
+          restore-keys: ksu11r-ccache-
+          save-always: true
+
+      - name: Build kernel + AK3 + Magisk
+        run: |
+          export CCACHE_DIR=$HOME/.ccache
+          export KSU_REF="${{ inputs.ksu_ref }}"
+          export SUSFS_REF="${{ inputs.susfs_ref }}"
+          ccache -z || true
+          bash scripts/build.sh
+          ccache -s || true
+
+      - name: Upload AnyKernel3 + Image
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ksu11r-ak3-image
+          path: |
+            artifacts/ksu-11r-ak3.zip
+            artifacts/Image
+            artifacts/Image.gz
+          retention-days: 30
+
+      - name: Upload modules + Magisk + symvers
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ksu11r-modules-magisk
+          path: |
+            artifacts/modules/
+            artifacts/Module.symvers
+            artifacts/.config
+            artifacts/magisk-ksu-11r-wifi-bt.zip
+          retention-days: 30
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ksu11r-build-log
+          path: build.log
+          retention-days: 30

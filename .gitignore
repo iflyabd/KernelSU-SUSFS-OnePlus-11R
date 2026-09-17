@@ -1,0 +1,10 @@
+src/
+out/
+artifacts/
+build.log
+build-aux/
+*.o
+*.ko
+*.order
+*.symvers
+.cache/
