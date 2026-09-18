@@ -2,7 +2,7 @@
 # build.sh — KernelSU-Next + SUSFS OnePlus 11R (SM8475) cloud build (GKI flow).
 # Base: WildKernels oneplus_11r_w.xml sources @ pinned SHAs (see base-pin.env).
 # Produces: Image/Image.gz, modules (mt7601u, btusb, bnep, 88x2bu),
-#           AnyKernel3 flashable zip, Magisk driver zip.
+#           AnyKernel3 flashable zip (drivers ride in AK3 modules/).
 # Usage: bash scripts/build.sh   (env: JOBS, WORKSPACE, KSU_REF, SUSFS_REF)
 set -euo pipefail
 
@@ -110,15 +110,23 @@ echo "CONFIG_KSU=y" >> "$OUT/.config"
 # UTS becomes 5.10.236-android12-9-o-g74d132f4467a (no -dirty marker).
 ./scripts/config --file "$OUT/.config" --set-str CONFIG_LOCALVERSION "-android12-9-o-g74d132f4467a"
 ./scripts/config --file "$OUT/.config" --disable CONFIG_LOCALVERSION_AUTO
+./scripts/config --file "$OUT/.config" --disable CONFIG_MODULE_SIG
+./scripts/config --file "$OUT/.config" --disable CONFIG_MODULE_SIG_FORCE
+./scripts/config --file "$OUT/.config" --disable CONFIG_MODULE_SIG_ALL
 if grep -rq "config KSU_SUSFS$" "$KDIR/fs/" 2>/dev/null; then echo "CONFIG_KSU_SUSFS=y" >> "$OUT/.config"; fi
 make O="$OUT" olddefconfig 2>&1 | tee -a "$LOG" | tail -n 5
 test "${PIPESTATUS[0]}" -eq 0 || { echo "[!] olddefconfig failed"; exit 1; }
 
 echo "[*] Verifying config..."
 for k in CONFIG_KSU CONFIG_MT7601U CONFIG_WLAN_VENDOR_MEDIATEK CONFIG_CFG80211 \
-         CONFIG_MAC80211 CONFIG_BT_HCIBTUSB CONFIG_CFI_CLANG CONFIG_SECURITY_SELINUX; do
+         CONFIG_MAC80211 CONFIG_BT_HCIBTUSB CONFIG_CFI_CLANG CONFIG_SECURITY_SELINUX \
+         CONFIG_PSTORE CONFIG_PSTORE_RAM; do
   grep -qE "^$k=(y|m)" "$OUT/.config" || { echo "[!] FAIL $k"; exit 1; }
   echo "  [OK] $(grep -E "^$k=" "$OUT/.config")"
+done
+for k in CONFIG_MODULE_SIG CONFIG_MODULE_SIG_FORCE CONFIG_MODULE_SIG_ALL; do
+  grep -q "^$k=" "$OUT/.config" && { echo "[!] FAIL $k should be off"; exit 1; }
+  echo "  [OK] $k off"
 done
 
 # --- built-in firmware blobs (EXTRA_FIRMWARE_DIR=/lib/firmware => host path) ---
@@ -150,7 +158,7 @@ grep -q "__cfi_check" "$OUT/Module.symvers" || echo "[WARN] no __cfi_check"
 echo "[+] UTS: $(strings "$OUT/arch/arm64/boot/Image" | grep -m1 'Linux version 5.10' || echo '?')"
 echo "[+] all gates passed"
 
-# --- stage artifacts + AnyKernel3 zip + Magisk zip ---
+# --- stage artifacts + AnyKernel3 zip ---
 echo "[*] Staging..."
 ART="$ROOT/artifacts"; rm -rf "$ART"; mkdir -p "$ART/modules" "$ART/firmware"
 cp "$OUT/arch/arm64/boot/Image" "$OUT/arch/arm64/boot/Image.gz" "$ART/"
@@ -174,12 +182,4 @@ EOF
 ( cd "$AK3" && zip -r -X "$ART/ksu-11r-ak3.zip" . -x ".*" > /dev/null )
 ls -lh "$ART/ksu-11r-ak3.zip"
 
-MOD="$ART/magisk"; rm -rf "$MOD"; mkdir -p "$MOD/vendor/lib/modules" "$MOD/lib/firmware" "$MOD/etc"
-cp -r "$ROOT/magisk-module/META-INF" \
-    "$ROOT/magisk-module/module.prop" "$ROOT/magisk-module/post-finit.sh" "$MOD/"
-[ -d "$ROOT/magisk-module/etc" ] && cp -r "$ROOT/magisk-module/etc/." "$MOD/etc/" || true
-cp "$ART/modules/"*.ko "$MOD/vendor/lib/modules/"
-cp -r "$ART/firmware/"* "$MOD/lib/firmware/"
-( cd "$MOD" && zip -r -X "$ART/magisk-ksu-11r-wifi-bt.zip" . -x ".*" > /dev/null )
-ls -lh "$ART/magisk-ksu-11r-wifi-bt.zip"
 echo "[+] staged at $ART"

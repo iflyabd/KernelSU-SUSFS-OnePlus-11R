@@ -15,7 +15,7 @@ OnePlus 11R (CPH2487, SM8475 waipio) custom 5.10 GKI kernel:
 ## CI
 Actions → `KSU-SUSFS OP11R boot build` → Run workflow (KSU/SUSFS refs
 overridable, defaults pinned). Artifacts (30d): `ksu11r-ak3-image`,
-`ksu11r-modules-magisk`, `ksu11r-build-log`.
+`ksu11r-modules`, `ksu11r-build-log`.
 
 ## Test gate (mandatory — no flash before this passes)
 1. `tools/repack-test-boot.sh` (on device) → `test-boot-ksu-11r.img`
@@ -23,7 +23,7 @@ overridable, defaults pinned). Artifacts (30d): `ksu11r-ak3-image`,
 3. Validate: `uname -r`, `lsusb` (`148f:7601`/`0bda:b812`), `iw dev wlan1`,
    `hciconfig`, internal `wlan0` still up, no bootloop
 4. Only then consider AK3 zip flash (keep
-   `/sdcard/Download/boot-stock-16.0.5.1002.img` + magisk backup at hand)
+   `/sdcard/Download/boot-stock-16.0.5.1002.img` at hand)
 
 ## Notes
 - Sources are never vendored (clean history, one commit): CI clones pins.

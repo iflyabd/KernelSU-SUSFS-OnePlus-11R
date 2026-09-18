@@ -50,7 +50,7 @@ jobs:
           restore-keys: ksu11r-ccache-
           save-always: true
 
-      - name: Build kernel + AK3 + Magisk
+      - name: Build kernel + AK3
         run: |
           export CCACHE_DIR=$HOME/.ccache
           export KSU_REF="${{ inputs.ksu_ref }}"
@@ -70,16 +70,15 @@ jobs:
             artifacts/Image.gz
           retention-days: 30
 
-      - name: Upload modules + Magisk + symvers
+      - name: Upload modules + symvers
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: ksu11r-modules-magisk
+          name: ksu11r-modules
           path: |
             artifacts/modules/
             artifacts/Module.symvers
             artifacts/.config
-            artifacts/magisk-ksu-11r-wifi-bt.zip
           retention-days: 30
 
       - name: Upload build log
