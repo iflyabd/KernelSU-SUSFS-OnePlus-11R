@@ -103,6 +103,13 @@ else
   echo "[=] OPLUS code fixes not applicable to common tree, skipping"
 fi
 
+# --- Barrot/UGREEN RTL8761BU btusb quirk (0bda:8771, 5.10-adapted) ---
+echo "[*] Applying btusb Barrot quirk..."
+git -C "$KDIR" apply --check "$ROOT/patches/btusb-barrot-8771-quirk.patch" \
+  || { echo "[!] btusb quirk check failed"; exit 1; }
+git -C "$KDIR" apply "$ROOT/patches/btusb-barrot-8771-quirk.patch"
+echo "[+] btusb quirk applied"
+
 # --- defconfig: stock GKI + KSU/SUSFS + monitor fragment ---
 echo "[*] Configuring..."
 mkdir -p "$OUT"
@@ -156,7 +163,8 @@ echo "[*] Verify gates..."
 MTKO=$(find "$OUT" -name "mt7601u.ko" | head -n 1)
 test -n "$MTKO" || { echo "[!] mt7601u.ko missing"; exit 1; }
 # Exact vermagic (anchored: a trailing "+" would break vendor_dlkm loading).
-modinfo "$MTKO" | grep -q "vermagic=5.10.236-android12-9-o-g74d132f4467a SMP" \
+# NOTE: modinfo prints "vermagic:<spaces><value>" (colon, not equals).
+modinfo "$MTKO" | grep -q "5.10.236-android12-9-o-g74d132f4467a SMP" \
   || { echo "[!] vermagic not stock-exact:"; modinfo "$MTKO" | grep vermagic; exit 1; }
 echo "[+] vermagic stock-exact"
 X2BU=$(find "$ROOT/drivers" -name "88x2bu.ko" | head -n 1)
