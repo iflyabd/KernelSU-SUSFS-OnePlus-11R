@@ -1,0 +1,15 @@
+--- a/drivers/bluetooth/btusb.c
++++ b/drivers/bluetooth/btusb.c
+@@ -497,6 +497,12 @@
+ 	/* Silicon Wave based devices */
+ 	{ USB_DEVICE(0x0c10, 0x0000), .driver_info = BTUSB_SWAVE },
+ 
++	/* UGREEN BT6.0 Adapter (33fa:0012, measured via USB descriptor
++	 * 2026-09-18: standard E0/01/01 BT interfaces, Full-speed).
++	 * Generic HCI binding, no vendor setup quirks; refine flags
++	 * (e.g. WIDEBAND_SPEECH) after first hciconfig/bluetoothctl test. */
++	{ USB_DEVICE(0x33fa, 0x0012), .driver_info = 0 },
++
+ 	{ }	/* Terminating entry */
+ };
+ 

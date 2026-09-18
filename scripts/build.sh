@@ -103,11 +103,11 @@ else
   echo "[=] OPLUS code fixes not applicable to common tree, skipping"
 fi
 
-# --- Barrot/UGREEN RTL8761BU btusb quirk (0bda:8771, 5.10-adapted) ---
+# --- UGREEN BT6.0 btusb quirk (33fa:0012, measured 5.10 tree) ---
 echo "[*] Applying btusb Barrot quirk..."
-git -C "$KDIR" apply --check "$ROOT/patches/btusb-barrot-8771-quirk.patch" \
+git -C "$KDIR" apply --check "$ROOT/patches/btusb-33fa0012-quirk.patch" \
   || { echo "[!] btusb quirk check failed"; exit 1; }
-git -C "$KDIR" apply "$ROOT/patches/btusb-barrot-8771-quirk.patch"
+git -C "$KDIR" apply "$ROOT/patches/btusb-33fa0012-quirk.patch"
 echo "[+] btusb quirk applied"
 
 # --- defconfig: stock GKI + KSU/SUSFS + monitor fragment ---
