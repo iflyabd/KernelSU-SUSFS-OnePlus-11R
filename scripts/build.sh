@@ -36,6 +36,10 @@ export HOSTCFLAGS="-Dbcmp=memcmp -D__KBUILD_HOSTBUILD__ -include $ROOT/build-aux
 export PYTHON=python3
 export CCACHE_BASEDIR="$ROOT"
 export CCACHE_DIR="${CCACHE_DIR:-$HOME/.ccache}"
+# Stock-exact UTS: setlocalversion appends "+" when $LOCALVERSION is unset and
+# the tree is dirty (KSU/SUSFS always dirty it). Stock build env exports it
+# (empty but set) — do the same so vermagic matches vendor_dlkm exactly.
+export LOCALVERSION=
 mkdir -p "$ROOT/build-aux"
 cp "$ROOT/build/host-compat.h" "$ROOT/build-aux/host-compat.h"
 
@@ -151,6 +155,10 @@ test "${PIPESTATUS[0]}" -eq 0 || { echo "[!] 88x2bu build failed"; exit 1; }
 echo "[*] Verify gates..."
 MTKO=$(find "$OUT" -name "mt7601u.ko" | head -n 1)
 test -n "$MTKO" || { echo "[!] mt7601u.ko missing"; exit 1; }
+# Exact vermagic (anchored: a trailing "+" would break vendor_dlkm loading).
+modinfo "$MTKO" | grep -q "vermagic=5.10.236-android12-9-o-g74d132f4467a SMP" \
+  || { echo "[!] vermagic not stock-exact:"; modinfo "$MTKO" | grep vermagic; exit 1; }
+echo "[+] vermagic stock-exact"
 X2BU=$(find "$ROOT/drivers" -name "88x2bu.ko" | head -n 1)
 test -n "$X2BU" || { echo "[!] 88x2bu.ko missing"; exit 1; }
 modinfo "$X2BU" | grep -qi "B812" || echo "[WARN] b812 alias not seen"
@@ -164,7 +172,8 @@ ART="$ROOT/artifacts"; rm -rf "$ART"; mkdir -p "$ART/modules" "$ART/firmware"
 cp "$OUT/arch/arm64/boot/Image" "$OUT/arch/arm64/boot/Image.gz" "$ART/"
 cp "$MTKO" "$X2BU" "$ART/modules/"
 for m in btusb.ko bnep.ko btintel.ko; do find "$OUT" -name "$m" -exec cp {} "$ART/modules/" \; 2>/dev/null || true; done
-cp "$OUT/Module.symvers" "$OUT/.config" "$ART/"
+cp "$OUT/Module.symvers" "$ART/"
+cp "$OUT/.config" "$ART/final-.config"
 cp "$ROOT/firmware/mt7601u.bin" "$ART/firmware/"; cp -r "$ROOT/firmware/rtl_bt" "$ART/firmware/"
 
 AK3="$ART/AnyKernel3"; rm -rf "$AK3"; cp -r "$SRC/AnyKernel3" "$AK3"

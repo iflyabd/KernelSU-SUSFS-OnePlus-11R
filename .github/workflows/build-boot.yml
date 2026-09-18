@@ -78,7 +78,7 @@ jobs:
           path: |
             artifacts/modules/
             artifacts/Module.symvers
-            artifacts/.config
+            artifacts/final-.config
           retention-days: 30
 
       - name: Upload build log
